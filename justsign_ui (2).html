@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JUST SIGN</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0D0A1A;
+  --panel:     #16102A;
+  --card:      #1E1535;
+  --border:    rgba(180,80,255,0.18);
+  --purple:    #B040FF;
+  --purple2:   #7B2FBE;
+  --pink:      #FF2D9B;
+  --cyan:      #00F0FF;
+  --gold:      #FFD700;
+  --ok:        #00FF88;
+  --err:       #FF3B30;
+  --warn:      #FF9500;
+  --txt:       #F0EAFF;
+  --txt-m:     #9080B0;
+  --txt-d:     #4A3860;
+  --glow-p:    0 0 16px rgba(176,64,255,0.55);
+  --glow-c:    0 0 16px rgba(0,240,255,0.55);
+  --glow-pk:   0 0 16px rgba(255,45,155,0.55);
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(176,64,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(176,64,255,0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+}
+
+.screen { display: none; flex-direction: column; height: 100%; position: relative; z-index: 1; }
+.screen.active { display: flex; }
+
+/* ── MENU ─────────────────────────────────────────────── */
+#screen-menu {
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px 20px;
+}
+
+/* Logo SVG area */
+.logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.logo-svg {
+  width: 180px;
+  height: 180px;
+  filter: drop-shadow(0 0 24px rgba(176,64,255,0.7)) drop-shadow(0 0 8px rgba(255,45,155,0.4));
+}
+
+.logo-sub {
+  font-size: 13px;
+  color: var(--txt-m);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Cards */
+.menu-cards {
+  display: flex;
+  gap: 14px;
+  width: 100%;
+  max-width: 980px;
+  justify-content: center;
+}
+
+.mode-card {
+  flex: 1;
+  max-width: 308px;
+  background: var(--card);
+  border-radius: 18px;
+  padding: 22px 18px 18px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: border-color .18s, box-shadow .18s, transform .12s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.mode-card:hover { transform: translateY(-3px); }
+.mode-card.selected { border-color: var(--purple); box-shadow: var(--glow-p); }
+.mode-card.selected.song { border-color: var(--pink); box-shadow: var(--glow-pk); }
+
+.card-num { align-self: flex-end; font-size: 11px; color: var(--txt-d); font-weight: 600; margin-bottom: 10px; }
+.mode-card.selected .card-num { color: var(--purple); }
+
+.card-icon {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  background: rgba(176,64,255,0.12);
+  border: 1.5px solid rgba(176,64,255,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 900; color: var(--purple);
+  margin-bottom: 14px;
+  transition: background .18s, border-color .18s, box-shadow .18s;
+}
+.mode-card.selected .card-icon {
+  background: rgba(176,64,255,0.22);
+  border-color: var(--purple);
+  box-shadow: var(--glow-p);
+}
+.mode-card.selected.song .card-icon { border-color: var(--pink); box-shadow: var(--glow-pk); color: var(--pink); }
+
+.card-title { font-size: 15px; font-weight: 700; color: var(--txt); margin-bottom: 4px; }
+.card-desc  { font-size: 12px; color: var(--txt-m); text-align: center; margin-bottom: 14px; }
+.card-divider { width: 100%; height: 1px; background: var(--border); margin-bottom: 10px; }
+.card-sub { font-size: 11px; color: var(--txt-d); }
+.mode-card.selected .card-sub { color: var(--purple); }
+.mode-card.selected.song .card-sub { color: var(--pink); }
+
+/* Play button */
+.play-btn {
+  background: linear-gradient(135deg, var(--purple), var(--pink));
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 15px 60px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(176,64,255,0.4), 0 0 8px rgba(255,45,155,0.3);
+  transition: box-shadow .15s, transform .1s;
+  letter-spacing: 0.3px;
+}
+.play-btn:hover { box-shadow: 0 0 36px rgba(176,64,255,0.6), 0 0 14px rgba(255,45,155,0.5); transform: scale(1.03); }
+
+.key-hints { display: flex; gap: 28px; }
+.key-hint  { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.key-badge {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 3px 8px;
+  font-size: 11px; font-weight: 600; color: var(--txt);
+  font-family: monospace;
+}
+.key-label { font-size: 11px; color: var(--txt-d); }
+
+/* ── TRAIN ────────────────────────────────────────────── */
+#screen-train { flex-direction: row; }
+
+.train-cam-col {
+  width: 52%; position: relative; flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.cam-feed { flex: 1; object-fit: cover; width: 100%; background: #000; display: block; }
+
+/* Cam border glow */
+.train-cam-col::after {
+  content: ''; position: absolute; inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px rgba(0,240,255,0.35);
+}
+
+.cam-stars { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; }
+.cam-star { width: 13px; height: 13px; border-radius: 50%; background: var(--txt-d); transition: background .2s, box-shadow .2s; }
+.cam-star.lit { background: var(--gold); box-shadow: 0 0 8px rgba(255,215,0,.7); }
+
+.cam-badge {
+  position: absolute; top: 8px; right: 8px;
+  background: rgba(0,240,255,0.12); color: var(--cyan);
+  font-size: 11px; font-weight: 700;
+  border-radius: 8px; padding: 3px 8px;
+  border: 1px solid rgba(0,240,255,0.3);
+}
+
+.cam-hud {
+  background: rgba(13,10,26,0.88);
+  backdrop-filter: blur(8px);
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--border);
+}
+.hud-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.hud-label { font-size: 10px; color: var(--txt-d); text-transform: uppercase; letter-spacing: .8px; font-weight: 600; }
+.hud-det { font-size: 28px; font-weight: 900; color: var(--txt-m); transition: color .15s, text-shadow .15s; }
+.hud-det.correct { color: var(--ok); text-shadow: 0 0 12px rgba(0,255,136,.6); }
+.hud-conf { font-size: 13px; color: var(--txt-m); font-weight: 600; }
+
+.hold-bar-wrap { height: 6px; background: rgba(176,64,255,0.12); border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+.hold-bar { height: 100%; background: var(--purple); border-radius: 3px; transition: width .08s linear, background .2s; width: 0%; }
+.hold-bar.correct { background: var(--ok); box-shadow: 0 0 8px rgba(0,255,136,.5); }
+.hold-msg { font-size: 11px; color: var(--txt-m); }
+
+/* Right panel */
+.train-info-col { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--panel); }
+
+.info-progress { height: 3px; background: rgba(176,64,255,0.12); }
+.info-progress-fill { height: 100%; background: linear-gradient(90deg, var(--purple), var(--pink)); transition: width .3s; }
+
+.info-header {
+  padding: 12px 18px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.info-mode { font-size: 11px; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: .8px; }
+.info-counter { font-size: 13px; font-weight: 700; color: var(--txt-m); }
+
+.info-sign-area {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.sign-letter {
+  font-size: 96px; font-weight: 900; color: var(--purple); line-height: 1;
+  text-shadow: 0 0 32px rgba(176,64,255,0.6), 0 0 8px rgba(176,64,255,0.4);
+  letter-spacing: -4px;
+}
+.sign-word {
+  font-size: 44px; font-weight: 900; color: var(--purple); line-height: 1.1; text-align: center;
+  text-shadow: 0 0 24px rgba(176,64,255,0.5);
+}
+.sign-hint-pill {
+  background: rgba(176,64,255,0.12);
+  border: 1px solid rgba(176,64,255,0.3);
+  color: var(--gold);
+  font-size: 12px; font-weight: 500; border-radius: 20px; padding: 5px 16px; margin-top: 10px;
+}
+
+.info-steps { flex: 1; padding: 10px 14px 8px; overflow-y: auto; }
+.steps-title { font-size: 10px; font-weight: 700; color: var(--txt-d); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; }
+
+.step-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 12px; margin-bottom: 6px;
+  border: 1px solid var(--border); background: rgba(255,255,255,0.02);
+  transition: border-color .2s, background .2s;
+}
+.step-item.unlocked { border-color: var(--purple); background: rgba(176,64,255,0.07); }
+.step-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--txt-d); color: var(--bg);
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background .2s, box-shadow .2s;
+}
+.step-item.unlocked .step-num { background: var(--purple); box-shadow: 0 0 8px rgba(176,64,255,.5); }
+.step-text { font-size: 12px; color: var(--txt-d); }
+.step-item.unlocked .step-text { color: var(--txt); }
+
+.info-video-btn {
+  margin: 6px 14px 8px;
+  background: rgba(123,47,190,0.18);
+  border: 1px solid var(--purple);
+  color: var(--txt); border-radius: 12px; padding: 11px 16px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background .15s, box-shadow .15s;
+}
+.info-video-btn:hover { background: rgba(176,64,255,0.25); box-shadow: var(--glow-p); }
+.info-video-sub { font-size: 11px; opacity: .65; }
+
+/* Tab bar */
+.tab-bar {
+  display: flex; align-items: stretch;
+  background: rgba(13,10,26,0.95);
+  border-top: 1px solid var(--border);
+  min-height: 64px;
+}
+.tab-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  border: none; background: transparent; cursor: pointer;
+  padding: 10px 8px; transition: background .12s;
+}
+.tab-btn:hover { background: rgba(176,64,255,0.08); }
+.tab-btn.primary { background: linear-gradient(135deg,var(--purple2),var(--purple)); }
+.tab-btn.primary:hover { background: linear-gradient(135deg,var(--purple),var(--pink)); }
+.tab-label { font-size: 12px; font-weight: 700; color: var(--txt); }
+.tab-btn[data-action="menu"] .tab-label { color: var(--txt-d); }
+.tab-btn.primary .tab-label { color: #fff; }
+.tab-key { font-size: 10px; color: var(--txt-d); font-family: monospace; }
+.tab-btn.primary .tab-key { color: rgba(255,255,255,.45); }
+
+/* ── SONG ─────────────────────────────────────────────── */
+#screen-song { flex-direction: row; }
+
+.song-cam-col {
+  width: 52%; position: relative;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+}
+.song-cam-feed { flex: 1; object-fit: cover; width: 100%; background: #000; }
+
+.song-det-hud {
+  background: rgba(13,10,26,0.88);
+  backdrop-filter: blur(8px);
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--border);
+}
+.song-det-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.song-det-val { font-size: 24px; font-weight: 800; color: var(--txt-m); transition: color .2s, text-shadow .2s; }
+.song-det-val.correct { color: var(--ok); text-shadow: 0 0 12px rgba(0,255,136,.6); }
+
+.timer-wrap { display: flex; align-items: center; gap: 10px; }
+.timer-svg { width: 44px; height: 44px; }
+.timer-bg  { fill: none; stroke: rgba(176,64,255,0.2); stroke-width: 4; }
+.timer-arc {
+  fill: none; stroke: var(--purple); stroke-width: 4; stroke-linecap: round;
+  transform: rotate(-90deg); transform-origin: 50% 50%;
+  transition: stroke-dashoffset .12s linear, stroke .3s;
+}
+.timer-val { font-size: 11px; font-weight: 700; fill: var(--purple); dominant-baseline: middle; text-anchor: middle; }
+
+.song-info-col { flex: 1; display: flex; flex-direction: column; background: var(--panel); }
+.song-header {
+  padding: 12px 18px 10px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.song-title-label { font-size: 11px; font-weight: 700; color: var(--pink); text-transform: uppercase; letter-spacing: .8px; }
+.song-score-badge {
+  background: rgba(255,45,155,0.12); color: var(--pink);
+  border: 1px solid rgba(255,45,155,0.3);
+  border-radius: 10px; padding: 3px 12px; font-size: 12px; font-weight: 700;
+}
+
+.song-progress-wrap { padding: 8px 18px; border-bottom: 1px solid var(--border); }
+.song-progress-bar { height: 3px; background: rgba(176,64,255,0.12); border-radius: 2px; overflow: hidden; }
+.song-progress-fill { height: 100%; background: linear-gradient(90deg,var(--purple),var(--pink)); transition: width .3s; }
+.song-progress-label { font-size: 10px; color: var(--txt-d); margin-top: 4px; text-align: right; }
+
+.song-lyric-area { padding: 14px 18px 12px; border-bottom: 1px solid var(--border); }
+.song-lyric-current { font-size: 20px; font-weight: 700; color: var(--txt); margin-bottom: 4px; }
+.song-lyric-next    { font-size: 12px; color: var(--txt-d); font-style: italic; }
+
+.song-sign-area {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 16px 18px 12px; border-bottom: 1px solid var(--border);
+}
+.song-sign-big  { font-size: 48px; font-weight: 900; color: var(--pink); text-shadow: 0 0 20px rgba(255,45,155,.5); margin-bottom: 6px; }
+.song-sign-hint { font-size: 13px; color: var(--txt-m); text-align: center; }
+
+/* Feedback */
+.feedback-overlay {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  opacity: 0; pointer-events: none; transition: opacity .15s;
+}
+.feedback-overlay.show { opacity: 1; }
+.feedback-overlay.ok   { background: rgba(0,255,136,.10); }
+.feedback-overlay.miss { background: rgba(255,59,48,.10); }
+.feedback-msg { font-size: 56px; font-weight: 900; letter-spacing: -2px; }
+.feedback-overlay.ok   .feedback-msg { color: var(--ok); text-shadow: 0 0 24px rgba(0,255,136,.7); }
+.feedback-overlay.miss .feedback-msg { color: var(--err); text-shadow: 0 0 24px rgba(255,59,48,.7); }
+
+/* Score */
+#screen-score {
+  align-items: center; justify-content: center; gap: 24px; padding: 40px;
+}
+.score-title { font-size: 28px; font-weight: 900; color: var(--txt); }
+.score-grade {
+  font-size: 110px; font-weight: 900; color: var(--purple); line-height: 1;
+  text-shadow: 0 0 40px rgba(176,64,255,.7), 0 0 12px rgba(255,45,155,.4);
+}
+.score-big { font-size: 48px; font-weight: 800; color: var(--txt); text-align: center; }
+.score-sub { font-size: 14px; color: var(--txt-m); margin-top: 4px; text-align: center; }
+.score-btn {
+  background: linear-gradient(135deg,var(--purple),var(--pink));
+  color: #fff; border: none; border-radius: 50px;
+  padding: 15px 60px; font-size: 16px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 0 20px rgba(176,64,255,.4);
+  transition: box-shadow .15s, transform .1s;
+}
+.score-btn:hover { box-shadow: 0 0 36px rgba(176,64,255,.7); transform: scale(1.02); }
+.score-btn-sec {
+  background: transparent; color: var(--txt-m);
+  border: 1px solid var(--border); border-radius: 50px;
+  padding: 12px 48px; font-size: 14px; cursor: pointer;
+  transition: border-color .15s;
+}
+.score-btn-sec:hover { border-color: var(--purple); color: var(--txt); }
+
+/* Pause */
+.pause-overlay {
+  position: fixed; inset: 0;
+  background: rgba(13,10,26,.88); backdrop-filter: blur(16px);
+  display: none; align-items: center; justify-content: center;
+  flex-direction: column; gap: 20px; z-index: 100;
+}
+.pause-overlay.show { display: flex; }
+.pause-title { font-size: 44px; font-weight: 900; color: var(--purple); text-shadow: var(--glow-p); }
+.pause-hint  { font-size: 14px; color: var(--txt-m); }
+
+/* Connection */
+.conn-status {
+  position: fixed; bottom: 10px; right: 14px;
+  font-size: 10px; color: var(--txt-d);
+  display: flex; align-items: center; gap: 5px; z-index: 200;
+}
+.conn-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--err); transition: background .3s; }
+.conn-dot.ok { background: var(--ok); box-shadow: 0 0 6px rgba(0,255,136,.6); }
+</style>
+</head>
+<body>
+
+<!-- MENU -->
+<div id="screen-menu" class="screen active">
+  <div class="logo-wrap">
+    <!-- Logo SVG neon synthwave JUST SIGN -->
+    <svg class="logo-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="discoBg" cx="50%" cy="50%" r="50%">
+          <stop offset="0%"   stop-color="#7B2FBE"/>
+          <stop offset="60%"  stop-color="#4A0080"/>
+          <stop offset="100%" stop-color="#1A0030"/>
+        </radialGradient>
+        <radialGradient id="glowRing" cx="50%" cy="50%" r="50%">
+          <stop offset="70%" stop-color="transparent"/>
+          <stop offset="100%" stop-color="rgba(176,64,255,0.4)"/>
+        </radialGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow2">
+          <feGaussianBlur stdDeviation="5" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- Disco ball circle -->
+      <circle cx="100" cy="100" r="94" fill="url(#discoBg)"/>
+      <!-- Grid lines on ball -->
+      <g stroke="rgba(255,100,255,0.25)" stroke-width="0.8" fill="none">
+        <line x1="6" y1="70"  x2="194" y2="70"/>
+        <line x1="6" y1="90"  x2="194" y2="90"/>
+        <line x1="6" y1="110" x2="194" y2="110"/>
+        <line x1="6" y1="130" x2="194" y2="130"/>
+        <line x1="70"  y1="6" x2="70"  y2="194"/>
+        <line x1="90"  y1="6" x2="90"  y2="194"/>
+        <line x1="110" y1="6" x2="110" y2="194"/>
+        <line x1="130" y1="6" x2="130" y2="194"/>
+      </g>
+      <!-- Sparkles -->
+      <g fill="var(--gold)" filter="url(#glow)">
+        <polygon points="155,38 157,44 163,44 158,48 160,54 155,50 150,54 152,48 147,44 153,44" transform="scale(0.7) translate(75,40)"/>
+        <polygon points="155,38 157,44 163,44 158,48 160,54 155,50 150,54 152,48 147,44 153,44" transform="scale(0.5) translate(220,230)"/>
+        <polygon points="155,38 157,44 163,44 158,48 160,54 155,50 150,54 152,48 147,44 153,44" transform="scale(0.4) translate(30,290)"/>
+      </g>
+      <!-- Glow ring -->
+      <circle cx="100" cy="100" r="94" fill="url(#glowRing)" opacity="0.6"/>
+      <!-- Border -->
+      <circle cx="100" cy="100" r="94" fill="none" stroke="rgba(255,45,155,0.6)" stroke-width="3"/>
+      <!-- JUST SIGN text -->
+      <text x="100" y="82" text-anchor="middle" font-family="Arial Black,sans-serif"
+            font-weight="900" font-size="42" fill="white" filter="url(#glow2)"
+            letter-spacing="-1">JUST</text>
+      <text x="100" y="135" text-anchor="middle" font-family="Arial Black,sans-serif"
+            font-weight="900" font-size="42" fill="white" filter="url(#glow2)"
+            letter-spacing="-1">SIGN</text>
+      <!-- Hand icon replacing U in JUST -->
+      <text x="100" y="82" text-anchor="middle" font-family="Arial Black,sans-serif"
+            font-weight="900" font-size="42" fill="rgba(176,64,255,0.0)"
+            letter-spacing="-1">JUST</text>
+    </svg>
+    <div class="logo-sub">Learn Sign Language Through Play</div>
+  </div>
+
+  <div class="menu-cards">
+    <div class="mode-card" data-idx="0" onclick="selectMode(0)">
+      <div class="card-num">1</div>
+      <div class="card-icon">A</div>
+      <div class="card-title">Learn Letters</div>
+      <div class="card-desc">Master the ASL alphabet</div>
+      <div class="card-divider"></div>
+      <div class="card-sub">24 letters · Visual guide</div>
+    </div>
+    <div class="mode-card" data-idx="1" onclick="selectMode(1)">
+      <div class="card-num">2</div>
+      <div class="card-icon">W</div>
+      <div class="card-title">Learn Words</div>
+      <div class="card-desc">Common ASL vocabulary</div>
+      <div class="card-divider"></div>
+      <div class="card-sub">16 words · Video links</div>
+    </div>
+    <div class="mode-card song" data-idx="2" onclick="selectMode(2)">
+      <div class="card-num">3</div>
+      <div class="card-icon">♪</div>
+      <div class="card-title">Song Mode</div>
+      <div class="card-desc">Bohemian Rhapsody in ASL</div>
+      <div class="card-divider"></div>
+      <div class="card-sub">Karaoke · Live scoring</div>
+    </div>
+  </div>
+
+  <button class="play-btn" onclick="sendCmd({action:'key',key:'play'})">
+    PLAY &nbsp;<span style="opacity:.6;font-size:13px">[SPACE]</span>
+  </button>
+
+  <div class="key-hints">
+    <div class="key-hint"><span class="key-badge">1 2 3</span><span class="key-label">Select</span></div>
+    <div class="key-hint"><span class="key-badge">← →</span><span class="key-label">Navigate</span></div>
+    <div class="key-hint"><span class="key-badge">Q</span><span class="key-label">Quit</span></div>
+  </div>
+</div>
+
+<!-- TRAIN -->
+<div id="screen-train" class="screen">
+  <div class="train-cam-col">
+    <div class="cam-stars">
+      <div class="cam-star" id="star0"></div>
+      <div class="cam-star" id="star1"></div>
+      <div class="cam-star" id="star2"></div>
+    </div>
+    <div class="cam-badge" id="train-badge">AI</div>
+    <img id="train-cam" class="cam-feed" alt="camera">
+    <div class="cam-hud">
+      <div class="hud-top">
+        <div>
+          <div class="hud-label">Detected</div>
+          <div class="hud-det" id="train-det">---</div>
+        </div>
+        <div class="hud-conf" id="train-conf"></div>
+      </div>
+      <div class="hold-bar-wrap"><div class="hold-bar" id="hold-bar"></div></div>
+      <div class="hold-msg" id="hold-msg">Hold the sign to unlock</div>
+    </div>
+  </div>
+
+  <div class="train-info-col">
+    <div class="info-progress"><div class="info-progress-fill" id="train-progress"></div></div>
+    <div class="info-header">
+      <span class="info-mode" id="train-mode-label">LEARN LETTERS</span>
+      <span class="info-counter" id="train-counter">1 / 24</span>
+    </div>
+    <div class="info-sign-area">
+      <div class="sign-letter" id="sign-display">A</div>
+      <div class="sign-hint-pill" id="sign-hint">Fist, thumb on side</div>
+    </div>
+    <div class="info-steps">
+      <div class="steps-title">Steps to master</div>
+      <div class="step-item" id="step-0"><div class="step-num">1</div><div class="step-text" id="step-text-0">Hold the sign to unlock...</div></div>
+      <div class="step-item" id="step-1"><div class="step-num">2</div><div class="step-text" id="step-text-1">Hold the sign to unlock...</div></div>
+      <div class="step-item" id="step-2"><div class="step-num">3</div><div class="step-text" id="step-text-2">Hold the sign to unlock...</div></div>
+    </div>
+    <button class="info-video-btn" onclick="sendCmd({action:'key',key:'video'})">
+      ▶ Watch Video <span class="info-video-sub">&nbsp;[V]</span>
+    </button>
+    <div class="tab-bar">
+      <button class="tab-btn" onclick="sendCmd({action:'key',key:'prev'})"><span class="tab-label">← PREV</span><span class="tab-key">[←]</span></button>
+      <button class="tab-btn primary" onclick="sendCmd({action:'key',key:'next'})"><span class="tab-label">NEXT →</span><span class="tab-key">[SPACE]</span></button>
+      <button class="tab-btn" onclick="sendCmd({action:'key',key:'pause'})"><span class="tab-label">⏸ PAUSE</span><span class="tab-key">[P]</span></button>
+      <button class="tab-btn" data-action="menu" onclick="sendCmd({action:'key',key:'menu'})"><span class="tab-label">MENU</span><span class="tab-key">[M]</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- SONG -->
+<div id="screen-song" class="screen">
+  <div class="song-cam-col">
+    <img id="song-cam" class="song-cam-feed" alt="camera">
+    <div class="feedback-overlay" id="feedback-overlay">
+      <div class="feedback-msg" id="feedback-msg">PERFECT!</div>
+    </div>
+    <div class="song-det-hud">
+      <div class="song-det-row">
+        <div><div class="hud-label">Detected</div><div class="song-det-val" id="song-det">---</div></div>
+        <div class="timer-wrap">
+          <svg class="timer-svg" viewBox="0 0 44 44">
+            <circle class="timer-bg" cx="22" cy="22" r="18"/>
+            <circle class="timer-arc" id="timer-arc" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="0"/>
+            <text class="timer-val" id="timer-val" x="22" y="22">4.0</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="song-info-col">
+    <div class="song-header">
+      <span class="song-title-label">Song Mode</span>
+      <span class="song-score-badge" id="song-score-badge">0 / 24</span>
+    </div>
+    <div class="song-progress-wrap">
+      <div class="song-progress-bar"><div class="song-progress-fill" id="song-progress"></div></div>
+      <div class="song-progress-label" id="song-progress-label">1 / 24</div>
+    </div>
+    <div class="song-lyric-area">
+      <div class="song-lyric-current" id="song-lyric">Is this the real life?</div>
+      <div class="song-lyric-next" id="song-next-lyric"></div>
+    </div>
+    <div class="song-sign-area">
+      <div class="song-sign-big" id="song-sign">REAL</div>
+      <div class="song-sign-hint" id="song-hint">Index from lips forward</div>
+    </div>
+    <div style="flex:1"></div>
+    <div class="tab-bar">
+      <button class="tab-btn" onclick="sendCmd({action:'key',key:'pause'})"><span class="tab-label">⏸ PAUSE</span><span class="tab-key">[P]</span></button>
+      <button class="tab-btn" data-action="menu" onclick="sendCmd({action:'key',key:'menu'})"><span class="tab-label">MENU</span><span class="tab-key">[M]</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- SCORE -->
+<div id="screen-score" class="screen" style="align-items:center;justify-content:center;gap:22px;padding:40px;">
+  <div class="score-title">Song Complete!</div>
+  <div class="score-grade" id="score-grade">A</div>
+  <div><div class="score-big" id="score-val">20 / 24</div><div class="score-sub" id="score-acc">Accuracy: 83%</div></div>
+  <button class="score-btn" onclick="sendCmd({action:'key',key:'song_replay'})">Play Again</button>
+  <button class="score-btn-sec" onclick="sendCmd({action:'key',key:'menu'})">Back to Menu</button>
+</div>
+
+<!-- PAUSE -->
+<div class="pause-overlay" id="pause-overlay">
+  <div class="pause-title">PAUSED</div>
+  <div class="pause-hint">Press P to resume</div>
+  <button class="play-btn" onclick="sendCmd({action:'key',key:'pause'})">Resume [P]</button>
+</div>
+
+<div class="conn-status">
+  <div class="conn-dot" id="conn-dot"></div>
+  <span id="conn-label">Connecting...</span>
+</div>
+
+<script>
+let ws = null, reconnectTimer = null;
+
+function connect() {
+  ws = new WebSocket('ws://localhost:8765');
+  ws.onopen  = () => { document.getElementById('conn-dot').classList.add('ok'); document.getElementById('conn-label').textContent = 'Connected'; clearTimeout(reconnectTimer); };
+  ws.onclose = () => { document.getElementById('conn-dot').classList.remove('ok'); document.getElementById('conn-label').textContent = 'Reconnecting...'; reconnectTimer = setTimeout(connect, 1500); };
+  ws.onerror = () => {};
+  ws.onmessage = (e) => { try { updateUI(JSON.parse(e.data)); } catch(err) { console.error(err); } };
+}
+
+function sendCmd(obj) { if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj)); }
+
+let currentScreen = '';
+function showScreen(name) {
+  if (currentScreen === name) return;
+  currentScreen = name;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + name);
+  if (el) el.classList.add('active');
+}
+
+function gradeFromPct(p) { return p>=95?'S':p>=85?'A':p>=70?'B':p>=55?'C':'D'; }
+
+function updateUI(state) {
+  const paused = (state.train&&state.train.paused)||(state.song&&state.song.paused);
+  document.getElementById('pause-overlay').classList.toggle('show', !!paused);
+  if (state.screen==='menu')       { showScreen('menu');  updateMenu(state.menu); }
+  else if (state.screen==='train') { showScreen('train'); updateTrain(state.train, state.cam); }
+  else if (state.screen==='song')  {
+    if (state.song && state.song.phase==='score') { showScreen('score'); updateScore(state.song); }
+    else { showScreen('song'); updateSong(state.song, state.cam); }
+  }
+}
+
+function updateMenu(m) {
+  if (!m) return;
+  document.querySelectorAll('.mode-card').forEach((c,i) => c.classList.toggle('selected', i===m.sel));
+}
+function selectMode(idx) { sendCmd({action:'key',key:'sel',val:idx}); }
+
+function updateTrain(t, cam) {
+  if (!t) return;
+  if (cam) document.getElementById('train-cam').src = 'data:image/jpeg;base64,'+cam;
+  document.getElementById('train-mode-label').textContent = t.mode==='letters'?'LEARN LETTERS':'LEARN WORDS';
+  document.getElementById('train-counter').textContent = `${t.idx+1} / ${t.total}`;
+  document.getElementById('train-progress').style.width = `${(t.idx/Math.max(1,t.total-1))*100}%`;
+  document.getElementById('train-badge').textContent = t.mode==='letters'?'AI':'ML';
+  const disp = document.getElementById('sign-display');
+  if (t.mode==='letters') { disp.className='sign-letter'; disp.textContent=t.item; }
+  else { disp.className='sign-word'; disp.textContent=t.item.replace('_',' '); }
+  document.getElementById('sign-hint').textContent = t.hint;
+  for (let i=0;i<3;i++) {
+    const el=document.getElementById(`step-${i}`), tx=document.getElementById(`step-text-${i}`);
+    const u=i<t.steps_done;
+    el.classList.toggle('unlocked',u);
+    tx.textContent = u&&t.steps[i]?t.steps[i]:'Hold the sign to unlock...';
+  }
+  const detEl=document.getElementById('train-det');
+  detEl.textContent=t.det||'---';
+  detEl.className='hud-det'+(t.correct?' correct':t.det?'':' ');
+  document.getElementById('train-conf').textContent = t.conf>0?`${t.conf}%`:'';
+  const pct=Math.min(100,(t.hold/t.hold_max)*100);
+  const bar=document.getElementById('hold-bar');
+  bar.style.width=pct+'%'; bar.classList.toggle('correct',t.correct);
+  document.getElementById('hold-msg').textContent=(pct>=98&&t.correct)?'PERFECT! Keep holding!':`Hold to unlock  ${Math.round(pct)}%`;
+  const stars=t.stars[t.idx]||0;
+  for(let i=0;i<3;i++) document.getElementById(`star${i}`).classList.toggle('lit',i<stars);
+}
+
+function updateSong(s, cam) {
+  if (!s) return;
+  if (cam) document.getElementById('song-cam').src = 'data:image/jpeg;base64,'+cam;
+  document.getElementById('song-lyric').textContent = s.lyric;
+  document.getElementById('song-next-lyric').textContent = s.next_lyric?`Next: ${s.next_lyric}`:'';
+  document.getElementById('song-sign').textContent = s.sign;
+  document.getElementById('song-hint').textContent = s.hint;
+  document.getElementById('song-score-badge').textContent = `${s.score} / ${s.total}`;
+  document.getElementById('song-progress').style.width = `${(s.idx/Math.max(1,s.total))*100}%`;
+  document.getElementById('song-progress-label').textContent = `${s.idx+1} / ${s.total}`;
+  const detEl=document.getElementById('song-det');
+  detEl.textContent=s.pred||'---'; detEl.className='song-det-val'+(s.correct?' correct':'');
+  const CIRC=113.1, ratio=s.rem/4.0, offset=CIRC*(1-ratio);
+  const arc=document.getElementById('timer-arc');
+  arc.style.strokeDashoffset=offset;
+  const col=ratio>0.55?'var(--ok)':ratio>0.25?'var(--warn)':'var(--err)';
+  arc.style.stroke=col;
+  document.getElementById('timer-val').textContent=s.rem.toFixed(1);
+  document.getElementById('timer-val').style.fill=col;
+  const fb=document.getElementById('feedback-overlay'), fbMsg=document.getElementById('feedback-msg');
+  if(s.phase==='ok'){fb.className='feedback-overlay show ok';fbMsg.textContent='PERFECT!';}
+  else if(s.phase==='miss'){fb.className='feedback-overlay show miss';fbMsg.textContent='MISSED';}
+  else{fb.className='feedback-overlay';}
+}
+
+function updateScore(s) {
+  if(!s) return;
+  const pct=Math.round(s.score/Math.max(1,s.total)*100);
+  document.getElementById('score-grade').textContent=gradeFromPct(pct);
+  document.getElementById('score-val').textContent=`${s.score} / ${s.total}`;
+  document.getElementById('score-acc').textContent=`Accuracy: ${pct}%`;
+}
+
+document.addEventListener('keydown', (e) => {
+  if(e.repeat) return;
+  const k=e.key;
+  if(k===' '||k==='Enter'){e.preventDefault();
+    if(currentScreen==='menu') sendCmd({action:'key',key:'play'});
+    else if(currentScreen==='train') sendCmd({action:'key',key:'next'});
+    else if(currentScreen==='score') sendCmd({action:'key',key:'song_replay'});
+  }
+  else if(k==='ArrowLeft'){if(currentScreen==='menu')sendCmd({action:'key',key:'left'});else if(currentScreen==='train')sendCmd({action:'key',key:'prev'});}
+  else if(k==='ArrowRight'){if(currentScreen==='menu')sendCmd({action:'key',key:'right'});else if(currentScreen==='train')sendCmd({action:'key',key:'next'});}
+  else if(k==='1')sendCmd({action:'key',key:'sel',val:0});
+  else if(k==='2')sendCmd({action:'key',key:'sel',val:1});
+  else if(k==='3')sendCmd({action:'key',key:'sel',val:2});
+  else if(k==='v'||k==='V')sendCmd({action:'key',key:'video'});
+  else if(k==='p'||k==='P')sendCmd({action:'key',key:'pause'});
+  else if(k==='m'||k==='M'||k==='Escape')sendCmd({action:'key',key:'menu'});
+  else if(k==='q'||k==='Q')sendCmd({action:'key',key:'quit'});
+});
+
+connect();
+</script>
+</body>
+</html>
